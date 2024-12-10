@@ -24,7 +24,21 @@ class ConcatPdf:
         self.merged_pdf_files = os.listdir(self.res_pdf_dir)
 
     def is_created(self, prefix):
-        return f"{prefix}_merged.pdf" in self.merged_pdf_files
+        if f"{prefix}_merged.pdf" in self.merged_pdf_files:
+            print(f"{prefix}_merged.pdf はすでに作成されています。")
+            return True
+
+    def get_unique_prefixes(self):
+        raw_prefixes = [file_name.split("_")[0] for file_name in self.raw_pdf_files]
+        unique_prefixes = set(raw_prefixes)
+
+        target_prefixes = set()
+        for raw_prefix in unique_prefixes:
+            if self.is_created(raw_prefix):
+                continue
+            target_prefixes.add(raw_prefix)
+
+        return target_prefixes
 
     def get_unique_raw_prefixes(self):
         return set([file_name.split("_")[0] for file_name in self.raw_pdf_files])
@@ -41,7 +55,6 @@ class ConcatPdf:
 
     def merge_pdf(self, target_pdfs):
         merger = PdfMerger()
-
         for pdf in target_pdfs:
             merger.append(self.raw_pdf_dir / pdf)
         return merger
@@ -50,24 +63,11 @@ class ConcatPdf:
         output_file = self.res_pdf_dir / f"{prefix}_merged.pdf"
         merger.write(output_file)
         merger.close()
-        print(f"結合されたPDFは {output_file} に保存されました。")
+        print(f"結合されたPDFが保存されました。(path: {output_file})")
 
     def concat_pdf(self):
-
-        unique_prefixes = set(
-            [file_name.split("_")[0] for file_name in self.raw_pdf_files]
-        )
-        ic(unique_prefixes)
-
-        for prefix in unique_prefixes:
-            if self.is_created(prefix):
-                print(f"{prefix}_merged.pdf はすでに存在しています。")
-                continue
-
+        for prefix in self.get_unique_prefixes():
             target_pdfs = self.get_target_pdfs(prefix)
-            ic(target_pdfs)
-
-            # 結合したPDFを保存
             merger = self.merge_pdf(target_pdfs)
             self.save_pdf(prefix, merger)
 
